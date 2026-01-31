@@ -1,19 +1,16 @@
 
-// 🔴 1) ID Google Sheets (z URL)
 const SHEET_ID = "1EYcdPiwaDppt3KxbVaISrjh5Bgp0QQW-FRyiyGLPQnQ";
 
-// 🔴 2) PŘESNÝ název listu
+
 const SHEET_NAME = "List1";
 
-// 🔴 3) Index sloupce s hodnocením (0 = A, 1 = B, 2 = C...)
+
 const RATING_COLUMN_INDEX = 3;
 
-// 🔴 4) Jak často se má refreshnout (v ms)
+
 const REFRESH_INTERVAL = 60_000; // 1 minuta
 
-/***********************
- *  KÓD – NA TO NESAHEJ
- ***********************/
+
 
 const URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq` +
@@ -56,7 +53,6 @@ function renderStars(avg) {
     const fill = document.createElement("div");
     fill.className = "star-fill";
 
-    // plynulé vyplnění (0.00–1.00)
     const value = Math.max(0, Math.min(1, avg - i));
     fill.style.width = `${value * 100}%`;
 
@@ -67,3 +63,4 @@ function renderStars(avg) {
 
 loadRatings();
 setInterval(loadRatings, REFRESH_INTERVAL);
+
