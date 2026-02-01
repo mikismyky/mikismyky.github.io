@@ -15,19 +15,43 @@ async function loadRatings() {
     const json = JSON.parse(text.substring(47).slice(0, -2));
     const rows = json.table.rows;
 
+    // ⭐ PRŮMĚR
     const ratings = rows
       .map(r => r.c[RATING_COLUMN_INDEX]?.v)
       .filter(v => typeof v === "number");
 
-    if (!ratings.length) return;
+    if (ratings.length) {
+      const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+      document.getElementById("avg-rating").textContent = avg.toFixed(2);
+      renderAvgStars(avg);
+    }
 
-    const avg =
-      ratings.reduce((a, b) => a + b, 0) / ratings.length;
+    // ⭐ RECENZE
+    const container = document.getElementById("reviews");
+    container.innerHTML = "";
 
-    document.getElementById("avg-rating").textContent =
-      avg.toFixed(2);
+    rows.reverse(); // nejnovější nahoře
 
-    renderAvgStars(avg);
+    rows.forEach(r => {
+      const date = r.c[2]?.f || r.c[2]?.v || "";
+      const rating = r.c[3]?.v || 0;
+      const nickname = r.c[4]?.v || "Anonym";
+      const comment = r.c[5]?.v || "";
+
+      const review = document.createElement("div");
+      review.className = "review";
+
+      review.innerHTML = `
+        <div class="review-name">${nickname}</div>
+        <div style="font-size:0.8rem; opacity:0.7;">${date}</div>
+        <div class="review-stars">
+          ${renderReviewStars(rating)}
+        </div>
+        <div class="review-text">${comment}</div>
+      `;
+
+      container.appendChild(review);
+    });
   } catch (err) {
     console.error("Chyba při načítání hodnocení:", err);
   }
@@ -53,51 +77,19 @@ function renderAvgStars(avg) {
   }
 }
 
+/* ⭐ HVĚZDY PRO RECENZE (HTML STRING) */
+function renderReviewStars(value) {
+  let html = "";
+  for (let i = 0; i < 5; i++) {
+    const percent = Math.max(0, Math.min(1, value - i)) * 100;
+    html += `
+      <div class="star">
+        <div class="star-fill" style="width:${percent}%"></div>
+      </div>
+    `;
+  }
+  return html;
+}
+
 loadRatings();
 setInterval(loadRatings, REFRESH_INTERVAL);
-
-/* ========================= */
-/* ====== RECENZE ========== */
-/* ========================= */
-
-const REVIEWS_URL =
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq` +
-  `?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
-
-fetch(REVIEWS_URL + "&_=" + Date.now())
-  .then(res => res.text())
-  .then(text => {
-    const json = JSON.parse(text.substring(47).slice(0, -2));
-    const rows = json.table.rows;
-
-    const container = document.getElementById("reviews");
-    container.innerHTML = "";
-
-    rows.reverse(); // nejnovější nahoře
-
-    rows.forEach(r => {
-      const date = r.c[2]?.f || r.c[2]?.v || "";
-      const rating = r.c[3]?.v || 0;
-      const nickname = r.c[4]?.v || "Anonym";
-      const comment = r.c[5]?.v || "";
-
-      const review = document.createElement("div");
-      review.className = "review";
-
-      review.innerHTML = `
-        <div class="review-name">${nickname}</div>
-        <div style="font-size:0.8rem; opacity:0.7;">${date}</div>
-
-        <div class="review-stars">
-          ${renderReviewStars(rating)}
-        </div>
-
-        <div class="review-text">${comment}</div>
-      `;
-
-      container.appendChild(review);
-    });
-  })
-  .catch(err => {
-    console.error("Chyba při načítání recenzí:", err);
-  });
