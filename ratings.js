@@ -60,48 +60,44 @@ setInterval(loadRatings, REFRESH_INTERVAL);
 /* ====== RECENZE ========== */
 /* ========================= */
 
-const REVIEWS_SHEET_URL = "https://docs.google.com/spreadsheets/d/1EYcdPiwaDppt3KxbVaISrjh5Bgp0QQW-FRyiyGLPQnQ/edit?pli=1&gid=0#gid=0";
+const REVIEWS_URL =
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq` +
+  `?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-fetch(REVIEWS_SHEET_URL)
+fetch(REVIEWS_URL + "&_=" + Date.now())
   .then(res => res.text())
   .then(text => {
-    const rows = text.trim().split("\n").slice(1);
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+    const rows = json.table.rows;
+
     const container = document.getElementById("reviews");
+    container.innerHTML = "";
 
     rows.reverse(); // nejnovější nahoře
 
-    rows.forEach(row => {
-      const cols = row.split(",");
-
-      const name = cols[0] || "Anonym";
-      const rating = parseFloat(cols[1]) || 0;
-      const comment = cols[2] || "";
+    rows.forEach(r => {
+      const date = r.c[2]?.f || r.c[2]?.v || "";
+      const rating = r.c[3]?.v || 0;
+      const nickname = r.c[4]?.v || "Anonym";
+      const comment = r.c[5]?.v || "";
 
       const review = document.createElement("div");
       review.className = "review";
 
       review.innerHTML = `
-        <div class="review-name">${name}</div>
+        <div class="review-name">${nickname}</div>
+        <div style="font-size:0.8rem; opacity:0.7;">${date}</div>
+
         <div class="review-stars">
           ${renderReviewStars(rating)}
         </div>
+
         <div class="review-text">${comment}</div>
       `;
 
       container.appendChild(review);
     });
+  })
+  .catch(err => {
+    console.error("Chyba při načítání recenzí:", err);
   });
-
-/* ⭐ HVĚZDY PRO RECENZE (HTML STRING) */
-function renderReviewStars(value) {
-  let html = "";
-  for (let i = 0; i < 5; i++) {
-    const percent = Math.max(0, Math.min(1, value - i)) * 100;
-    html += `
-      <div class="star">
-        <div class="star-fill" style="width:${percent}%"></div>
-      </div>
-    `;
-  }
-  return html;
-}
