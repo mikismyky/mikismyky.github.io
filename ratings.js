@@ -1,16 +1,7 @@
-
 const SHEET_ID = "1EYcdPiwaDppt3KxbVaISrjh5Bgp0QQW-FRyiyGLPQnQ";
-
-
 const SHEET_NAME = "List1";
-
-
 const RATING_COLUMN_INDEX = 3;
-
-
 const REFRESH_INTERVAL = 60_000; // 1 minuta
-
-
 
 const URL =
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq` +
@@ -36,13 +27,14 @@ async function loadRatings() {
     document.getElementById("avg-rating").textContent =
       avg.toFixed(2);
 
-    renderStars(avg);
+    renderAvgStars(avg);
   } catch (err) {
     console.error("Chyba při načítání hodnocení:", err);
   }
 }
 
-function renderStars(avg) {
+/* ⭐ HVĚZDY PRO PRŮMĚR (DOM) */
+function renderAvgStars(avg) {
   const container = document.getElementById("stars");
   container.innerHTML = "";
 
@@ -64,3 +56,52 @@ function renderStars(avg) {
 loadRatings();
 setInterval(loadRatings, REFRESH_INTERVAL);
 
+/* ========================= */
+/* ====== RECENZE ========== */
+/* ========================= */
+
+const REVIEWS_SHEET_URL = "https://docs.google.com/spreadsheets/d/1EYcdPiwaDppt3KxbVaISrjh5Bgp0QQW-FRyiyGLPQnQ/edit?pli=1&gid=0#gid=0";
+
+fetch(REVIEWS_SHEET_URL)
+  .then(res => res.text())
+  .then(text => {
+    const rows = text.trim().split("\n").slice(1);
+    const container = document.getElementById("reviews");
+
+    rows.reverse(); // nejnovější nahoře
+
+    rows.forEach(row => {
+      const cols = row.split(",");
+
+      const name = cols[0] || "Anonym";
+      const rating = parseFloat(cols[1]) || 0;
+      const comment = cols[2] || "";
+
+      const review = document.createElement("div");
+      review.className = "review";
+
+      review.innerHTML = `
+        <div class="review-name">${name}</div>
+        <div class="review-stars">
+          ${renderReviewStars(rating)}
+        </div>
+        <div class="review-text">${comment}</div>
+      `;
+
+      container.appendChild(review);
+    });
+  });
+
+/* ⭐ HVĚZDY PRO RECENZE (HTML STRING) */
+function renderReviewStars(value) {
+  let html = "";
+  for (let i = 0; i < 5; i++) {
+    const percent = Math.max(0, Math.min(1, value - i)) * 100;
+    html += `
+      <div class="star">
+        <div class="star-fill" style="width:${percent}%"></div>
+      </div>
+    `;
+  }
+  return html;
+}
